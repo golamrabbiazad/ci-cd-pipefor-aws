@@ -1,0 +1,30 @@
+sudo: required
+dist: trusty
+language: node_js
+node_js:
+  - 14
+python:
+  - 3.9
+caches:
+  - pip
+  - yarn
+install:
+  - pip install awscli
+before_script:
+  - yarn
+script:
+  - yarn build
+deploy:
+  provider: s3
+  access_key_id: $AWS_ACCESS_KEY_ID
+  secret_access_key: $AWS_SECRET_ACCESS_KEY
+  bucket: $AWS_BUCKET
+  region: $AWS_DEFAULT_REGION
+  skip_cleanup: true
+  local_dir: out
+  cache_control: "max-age=21600"
+  on:
+    branch: main
+after_deploy:
+  - aws configure set preview.cloudfront true
+  - test $TRAVIS_BRANCH = main && aws cloudfront create-invalidation --distribution-id $AWS_CLOUDFRONT_DISTRIBUTION_ID --paths '/*'
